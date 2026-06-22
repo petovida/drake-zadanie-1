@@ -1,0 +1,16 @@
+[
+  { "id": "",     "type": "ORDER", "created": "2026-01-05", "amount": 100,    "vat": 20                 },
+  {               "type": "ORDER", "created": "2026-01-05", "amount": 100,    "vat": 20                 },
+  { "id": "ID1",  "type": "",      "created": "2026-01-05", "amount": 100,    "vat": 20                 },
+  { "id": "ID2",                   "created": "2026-01-05", "amount": 100,    "vat": 20                 },
+  { "id": "ID3",  "type": "ORDER", "created": "abcd",       "amount": 100,    "vat": 20                 },
+  { "id": "ID4",  "type": "ORDER", "created": "",           "amount": 100,    "vat": 20                 },
+  { "id": "ID5",  "type": "ORDER",                          "amount": 100,    "vat": 20                 },
+  { "id": "ID6",  "type": "ORDER", "created": "2026-01-05", "amount": "abcd", "vat": 20                 },
+  { "id": "ID7",  "type": "ORDER", "created": "2026-01-05", "amount": null,   "vat": 20                 },
+  { "id": "ID8",  "type": "ORDER", "created": "2026-01-05",                   "vat": 20                 },
+  { "id": "ID9",  "type": "ORDER", "created": "2026-01-05", "amount": 100,    "vat": "abcd"             },
+  { "id": "ID10", "type": "ORDER", "created": "2026-01-05", "amount": 100,    "vat": null               },
+  { "id": "ID11", "type": "ORDER", "created": "2026-01-05", "amount": 100                               },
+  { "id": "ID12", "type": "ORDER", "created": "2026-01-05", "amount": 100,    "vat": 20, "parameter": 1 }
+]
