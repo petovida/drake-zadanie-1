@@ -1,3 +1,5 @@
+package sk.drake.test;
+
 public class Main {
   public static void main(String[] args) {
     JsonToXmlConverter converter = new JsonToXmlConverter();

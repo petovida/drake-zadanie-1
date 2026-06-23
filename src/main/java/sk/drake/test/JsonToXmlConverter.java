@@ -1,3 +1,6 @@
+package sk.drake.test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
