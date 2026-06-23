@@ -6,9 +6,10 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JsonToXmlConverter {
 
@@ -98,7 +99,8 @@ public class JsonToXmlConverter {
         if (date.isAfter(this.dateFrom) || date.isEqual(this.dateFrom)) {
           inputValid = true;
         } else {
-          System.out.print("Datum konca musi byt neskorsi alebo rovnaky ako datum zaciatku! Skuste znovu: ");
+          System.out.print(
+              "Datum konca musi byt neskorsi alebo rovnaky ako datum zaciatku! Skuste znovu: ");
         }
       } catch (DateTimeParseException e) {
         System.out.print("Nespravne zadany datum! Skuste znovu: ");
@@ -109,16 +111,22 @@ public class JsonToXmlConverter {
     System.out.println("----------------------\n");
   }
 
-  private List<Path> findJsonFilesInFolder(Path inputDir) {
-    return new ArrayList<>();
+  private Set<Path> findJsonFilesInFolder(Path inputDir) {
+    try (Stream<Path> stream = Files.list(inputDir)) {
+      return stream.filter(file -> !Files.isDirectory(file)).collect(Collectors.toSet());
+    } catch (IOException e) {
+      System.out.println("Nepodarilo sa nacitat subory z priecinka.");
+    }
+    return Set.of();
   }
 
   private void convertSingleJson(Path filePath, Path outputDir) {}
 
   public void runApp() {
     getUserInput();
-    List<Path> jsonFilePaths = findJsonFilesInFolder(inputDir);
+    Set<Path> jsonFilePaths = findJsonFilesInFolder(inputDir);
     for (Path filePath : jsonFilePaths) {
+      System.out.println(filePath.toString());
       convertSingleJson(filePath, outputDir);
     }
     System.out.println("Vsetky subory boli uspesne spracovane.");
