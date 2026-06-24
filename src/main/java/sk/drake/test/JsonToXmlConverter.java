@@ -1,7 +1,9 @@
 package sk.drake.test;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -22,6 +24,8 @@ public class JsonToXmlConverter {
   private LocalDate dateTo;
 
   private final Scanner scanner = new Scanner(System.in);
+  private final ObjectMapper mapper = new ObjectMapper();
+  private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   private void getUserInput() {
     System.out.println("Zadajte vstupne udaje:");
@@ -75,7 +79,6 @@ public class JsonToXmlConverter {
 
     System.out.print(
         "Zadajte datum, OD ktoreho (vratane) sa budu zaznamy ukladat do XML suborov (v tvare YYYY-MM-DD): ");
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     LocalDate date = null;
     inputValid = false;
     do {
@@ -123,15 +126,124 @@ public class JsonToXmlConverter {
     return Set.of();
   }
 
-  private void convertSingleJson(Path filePath, Path outputDir) {}
+  private Message processSingleRecord(JsonNode record) throws InvalidRowException {
+    Message message = new Message();
+    JsonNode node;
+
+    // ID
+    node = record.get("id");
+    if (node == null || node.isNull() || node.asText().isEmpty()) {
+      throw new InvalidRowException("Pole \"ID\" je prazdne alebo neexistuje.");
+    } else {
+      message.setId(node.asText());
+    }
+
+    // Type
+    node = record.get("type");
+    if (node == null || node.isNull() || node.asText().isEmpty()) {
+      message.setType("UNKNOWN");
+    } else {
+      message.setType(node.asText());
+    }
+
+    // Created
+    node = record.get("created");
+    if (node == null || node.isNull() || node.asText().isEmpty()) {
+      throw new InvalidRowException("Pole \"Created\" je prazdne alebo neexistuje.");
+    } else {
+      try {
+        LocalDate parsedDate = LocalDate.parse(node.asText(), formatter);
+        if (parsedDate.isBefore(this.dateFrom) || parsedDate.isAfter(this.dateTo)) {
+          throw new InvalidRowException(
+              "Datum zadany v poli \"Created\" nie je v pozadovanom rozsahu.");
+        }
+        message.setCreated(parsedDate);
+      } catch (DateTimeParseException e) {
+        throw new InvalidRowException("Pole \"Created\" nema datum v spravnom formate.");
+      }
+    }
+
+    // Amount
+    node = record.get("amount");
+    BigDecimal amount;
+    if (node == null || node.isNull()) {
+      throw new InvalidRowException("Pole \"Amount\" je prazdne alebo neexistuje.");
+    } else if (!node.isNumber()) {
+      throw new InvalidRowException("V poli \"Amount\" nie je platne cislo.");
+    } else {
+      amount = node.decimalValue();
+      message.setAmount(amount);
+    }
+
+    // Vat
+    node = record.get("vat");
+    int vat;
+    if (node == null || node.isNull()) {
+      throw new InvalidRowException("Pole \"Vat\" je prazdne alebo neexistuje.");
+    } else if (!node.isNumber()) {
+      throw new InvalidRowException("V poli \"Vat\" nie je platne cislo.");
+    } else {
+      vat = node.asInt();
+      message.setVat(vat);
+    }
+
+    // compute amount with vat
+    message.setAmountWithVat(amount.multiply(BigDecimal.valueOf(1 + vat / 100.0)));
+
+    return message;
+  }
+
+  private void convertSingleJson(Path filePath, Path outputDir) throws IOException {
+    System.out.println("Spracovavam subor " + filePath.toString());
+    JsonNode jsonNode = mapper.readTree(filePath.toFile());
+    Message message;
+    int row = 0;
+    int validRows = 0;
+    for (JsonNode record : jsonNode) {
+      row++;
+      try {
+        message = processSingleRecord(record);
+        validRows++;
+        System.out.println(
+            "Zaznam "
+                + row
+                + ": "
+                + message.getId()
+                + ", "
+                + message.getType()
+                + ", "
+                + message.getCreated()
+                + ", "
+                + message.getAmount()
+                + ", "
+                + message.getVat()
+                + ", "
+                + message.getAmountWithVat());
+      } catch (InvalidRowException e) {
+        System.out.println("Zaznam " + row + ": " + e.getMessage());
+      }
+    }
+    if (validRows == 0) {
+      System.out.println(
+          "V JSON subore sa nenachadzal ziadny platny riadok. XML subor nebol vytvoreny.\n");
+    } else {
+      System.out.println(
+          "JSON subor bol spracovany. Pocet platnych riadkov ulozenych do XML suboru: "
+              + validRows
+              + "\n");
+    }
+  }
 
   public void runApp() {
     getUserInput();
     Set<Path> jsonFilePaths = findJsonFilesInFolder(inputDir);
     for (Path filePath : jsonFilePaths) {
-      System.out.println(filePath.toString());
-      convertSingleJson(filePath, outputDir);
+      try {
+        convertSingleJson(filePath, outputDir);
+      } catch (IOException e) {
+        System.out.println("Nastala ina chyba pri spracovani suboru:\n" + e + ")");
+      }
     }
-    System.out.println("Vsetky subory boli uspesne spracovane.");
+    System.out.println("Vsetky JSON subory boli spracovane.");
   }
 }
