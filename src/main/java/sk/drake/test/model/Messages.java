@@ -1,4 +1,4 @@
-package sk.drake.test;
+package sk.drake.test.model;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;

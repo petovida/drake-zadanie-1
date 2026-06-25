@@ -1,10 +1,11 @@
-package sk.drake.test;
+package sk.drake.test.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.xml.bind.annotation.*;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import lombok.Getter;
 import lombok.Setter;
+import sk.drake.test.adapter.LocalDateAdapter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

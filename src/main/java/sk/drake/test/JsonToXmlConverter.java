@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
+import sk.drake.test.exception.InvalidRowException;
+import sk.drake.test.model.Message;
+import sk.drake.test.model.Messages;
 
 import java.io.File;
 import java.io.IOException;

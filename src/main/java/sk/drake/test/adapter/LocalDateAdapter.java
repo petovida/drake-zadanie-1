@@ -1,4 +1,4 @@
-package sk.drake.test;
+package sk.drake.test.adapter;
 
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
