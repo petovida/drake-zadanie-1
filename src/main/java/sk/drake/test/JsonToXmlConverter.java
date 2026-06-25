@@ -1,7 +1,13 @@
 package sk.drake.test;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -11,6 +17,8 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -193,17 +201,28 @@ public class JsonToXmlConverter {
     return message;
   }
 
-  private void convertSingleJson(Path filePath, Path outputDir) throws IOException {
+  private void convertSingleJson(Path filePath, Path outputDir) throws IOException, JAXBException {
     System.out.println("Spracovavam subor " + filePath.toString());
-    JsonNode jsonNode = mapper.readTree(filePath.toFile());
+
+    // read Json rows to Message objects (+ validation)
+    JsonNode jsonNode;
+    try {
+      jsonNode = mapper.readTree(filePath.toFile());
+      if (!jsonNode.isArray()) {
+        System.out.println("JSON subor neobsahuje pole. Subor sa nespracuje.");
+        return;
+      }
+    } catch (JsonParseException e) {
+      System.out.println("Syntakticka chyba v JSON subore. Subor sa nespracuje.");
+      return;
+    }
+    Messages validMessages = new Messages();
     Message message;
     int row = 0;
-    int validRows = 0;
     for (JsonNode record : jsonNode) {
       row++;
       try {
         message = processSingleRecord(record);
-        validRows++;
         System.out.println(
             "Zaznam "
                 + row
@@ -219,17 +238,24 @@ public class JsonToXmlConverter {
                 + message.getVat()
                 + ", "
                 + message.getAmountWithVat());
+        validMessages.getMessages().add(message);
       } catch (InvalidRowException e) {
         System.out.println("Zaznam " + row + ": " + e.getMessage());
       }
     }
-    if (validRows == 0) {
+    if (validMessages.getMessages().isEmpty()) {
       System.out.println(
-          "V JSON subore sa nenachadzal ziadny platny riadok. XML subor nebol vytvoreny.\n");
+          "V JSON subore sa nenachadzal ziadny platny zaznam. XML subor nebol vytvoreny.\n");
     } else {
+      // write Message object to XML file
+      File outputFile = outputDir.resolve(filePath.getFileName() + ".xml").toFile();
+      JAXBContext context = JAXBContext.newInstance(Messages.class);
+      Marshaller marshaller = context.createMarshaller();
+      marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+      marshaller.marshal(validMessages, outputFile);
       System.out.println(
-          "JSON subor bol spracovany. Pocet platnych riadkov ulozenych do XML suboru: "
-              + validRows
+          "JSON subor bol spracovany. Pocet platnych zaznamov ulozenych do XML suboru: "
+              + validMessages.getMessages().size()
               + "\n");
     }
   }
@@ -241,7 +267,9 @@ public class JsonToXmlConverter {
       try {
         convertSingleJson(filePath, outputDir);
       } catch (IOException e) {
-        System.out.println("Nastala ina chyba pri spracovani suboru:\n" + e + ")");
+        System.out.println("Nastala ina chyba pri spracovani JSON suboru:\n" + e + "\n");
+      } catch (JAXBException e) {
+        System.out.println("Nastala ina chyba pri ukladani XML suboru:\n" + e + "\n");
       }
     }
     System.out.println("Vsetky JSON subory boli spracovane.");
