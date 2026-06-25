@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -35,6 +36,7 @@ public class JsonToXmlConverter {
   private final Scanner scanner = new Scanner(System.in);
   private final ObjectMapper mapper = new ObjectMapper();
   private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+  private final XmlSigner xmlSigner = new XmlSigner();
 
   private void getUserInput() {
     System.out.println("Zadajte vstupne udaje:");
@@ -194,7 +196,7 @@ public class JsonToXmlConverter {
     } else {
       vat = node.asInt();
       if (vat < 0 || vat > 100) {
-          throw new InvalidRowException("V poli \"Vat\" je zadane cislo mimo rozsahu 0-100.");
+        throw new InvalidRowException("V poli \"Vat\" je zadane cislo mimo rozsahu 0-100.");
       }
       message.setVat(vat);
     }
@@ -205,7 +207,8 @@ public class JsonToXmlConverter {
     return message;
   }
 
-  private void convertSingleJson(Path filePath, Path outputDir) throws IOException, JAXBException {
+  private void convertSingleJson(Path filePath, Path outputDir)
+      throws IOException, JAXBException, GeneralSecurityException {
     System.out.println("Spracovavam subor " + filePath.toString());
 
     // read Json rows to Message objects (+ validation)
@@ -248,8 +251,10 @@ public class JsonToXmlConverter {
       marshaller.marshal(validMessages, outputFile);
       System.out.println(
           "JSON subor bol spracovany. Pocet platnych zaznamov ulozenych do XML suboru: "
-              + validMessages.getMessages().size()
-              + "\n");
+              + validMessages.getMessages().size());
+
+      // sign created XML file
+      xmlSigner.signXml(outputFile);
     }
   }
 
@@ -260,9 +265,11 @@ public class JsonToXmlConverter {
       try {
         convertSingleJson(filePath, outputDir);
       } catch (IOException e) {
-        System.out.println("Nastala ina chyba pri spracovani JSON suboru:\n" + e + "\n");
+        System.out.println("Nastala chyba pri spracovani suboru:\n" + e + "\n");
       } catch (JAXBException e) {
-        System.out.println("Nastala ina chyba pri ukladani XML suboru:\n" + e + "\n");
+        System.out.println("Nastala chyba pri ukladani XML suboru:\n" + e + "\n");
+      } catch (GeneralSecurityException e) {
+        System.out.println("Nastala chyba pri podpisovani XML suboru:\n" + e + "\n");
       }
     }
     System.out.println("Vsetky JSON subory boli spracovane.");
