@@ -193,6 +193,9 @@ public class JsonToXmlConverter {
       throw new InvalidRowException("V poli \"Vat\" nie je platne cislo.");
     } else {
       vat = node.asInt();
+      if (vat < 0 || vat > 100) {
+          throw new InvalidRowException("V poli \"Vat\" je zadane cislo mimo rozsahu 0-100.");
+      }
       message.setVat(vat);
     }
 
