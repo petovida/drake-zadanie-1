@@ -17,8 +17,6 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -209,11 +207,11 @@ public class JsonToXmlConverter {
     try {
       jsonNode = mapper.readTree(filePath.toFile());
       if (!jsonNode.isArray()) {
-        System.out.println("JSON subor neobsahuje pole. Subor sa nespracuje.");
+        System.out.println("JSON subor neobsahuje pole. Subor sa nespracuje.\n");
         return;
       }
     } catch (JsonParseException e) {
-      System.out.println("Syntakticka chyba v JSON subore. Subor sa nespracuje.");
+      System.out.println("Syntakticka chyba v JSON subore. Subor sa nespracuje.\n");
       return;
     }
     Messages validMessages = new Messages();
@@ -223,21 +221,6 @@ public class JsonToXmlConverter {
       row++;
       try {
         message = processSingleRecord(record);
-        System.out.println(
-            "Zaznam "
-                + row
-                + ": "
-                + message.getId()
-                + ", "
-                + message.getType()
-                + ", "
-                + message.getCreated()
-                + ", "
-                + message.getAmount()
-                + ", "
-                + message.getVat()
-                + ", "
-                + message.getAmountWithVat());
         validMessages.getMessages().add(message);
       } catch (InvalidRowException e) {
         System.out.println("Zaznam " + row + ": " + e.getMessage());
@@ -247,8 +230,12 @@ public class JsonToXmlConverter {
       System.out.println(
           "V JSON subore sa nenachadzal ziadny platny zaznam. XML subor nebol vytvoreny.\n");
     } else {
+      // get filename without extension
+      String outputFilename = filePath.getFileName().toString();
+      outputFilename = outputFilename.substring(0, outputFilename.lastIndexOf("."));
+
       // write Message object to XML file
-      File outputFile = outputDir.resolve(filePath.getFileName() + ".xml").toFile();
+      File outputFile = outputDir.resolve(outputFilename + ".xml").toFile();
       JAXBContext context = JAXBContext.newInstance(Messages.class);
       Marshaller marshaller = context.createMarshaller();
       marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
